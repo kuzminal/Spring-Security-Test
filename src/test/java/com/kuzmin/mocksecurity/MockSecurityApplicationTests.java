@@ -9,10 +9,11 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -78,5 +79,29 @@ class MockSecurityApplicationTests {
                 .andExpect(redirectedUrl("/home"))
                 .andExpect(status().isFound())
                 .andExpect(authenticated());
+    }
+
+    @Test
+    public void testHelloPOST() throws Exception {
+        mvc.perform(post("/hello"))
+                .andExpect(status().isForbidden());
+    }
+    @Test
+    public void testHelloPOSTWithCSRF() throws Exception {
+        mvc.perform(post("/csrf").with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void testCORSForTestEndpoint() throws Exception {
+        mvc.perform(options("/cors")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Origin", "http://www.example.com")
+        )
+                .andExpect(header().exists("Access-Control-Allow-Origin"))
+                .andExpect(header().string("Access-Control-Allow-Origin", "*"))
+                .andExpect(header().exists("Access-Control-Allow-Methods"))
+                .andExpect(header().string("Access-Control-Allow-Methods", "POST"))
+                .andExpect(status().isOk());
     }
 }
